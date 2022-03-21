@@ -2,13 +2,9 @@
 This tool was NOT written by Atlassian developers and is considered a third-party tool. This means that this is also NOT supported by Atlassian. We highly recommend you have your team review the script before running it to ensure you understand the steps and actions taking place, as Atlassian is not responsible for the resulting configuration.
 
 ## Purpose
-This script was intended to scan a server/dc instance, locating all attachments within a given pull request, and then download/upload it into the matching repo/pr within Bitbucket Cloud as the BCMA plugin does not perform this action. This script is mostly complete but i ran into an issue with uploading the actual downloaded items to Bitbucket Cloud as you can't attach anything outside of image files into a PR, and doing so doesn't have a normal API.
+This script is intended to scan a server/dc instance, locating all attachments within all pull requests, and then download/upload it into the matching repo/pr within Bitbucket Cloud as the BCMA plugin does not perform this action.
 
-It may be possible to still upload the images via the normal api endpoint (below) but looking at the network tab of a browser's "developer panel" we see that it actually makes a call against a "/xhr/..." URI which may not be something we can interact with via the API. Even still, it referrences a regex "r[\w+]" string which represents the repo id on the backend which we do not have a way of knowing in advance. It may be possible but requires more investigation.
-
-api endpoint to create comment in a PR (and theoretically upload an attachment/image)
-https://developer.atlassian.com/cloud/bitbucket/rest/api-group-pullrequests/#api-repositories-workspace-repo-slug-pullrequests-pull-request-id-comments-get
-
+The process involves locating all attachments within comments by reading any particular PR's activity log. Once we identify the file, we can download it to the local working machine. We replace space characters with underscores, since that will happen anyway when uploading to cloud but we do it early to better keep track of everything, and then we append a UUID to the end of the filename (before the file's extension) to make sure it's unique and won't collide with any other files that we previously uploaded. Once the file exists in the new repo's "downloads" folder, we can then hyperlink to it from a new pr comment in the matching prs.
 
 ## How to Use
 Edit rename/copy the "env-template.py" file to "env.py" (as env.py is in the .gitignore) and fill it out accordingly.
