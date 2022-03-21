@@ -72,13 +72,13 @@ class Base_API:
                 return r
 
     def _post_api(self, endpoint: str, params: dict=None, headers: dict=None,
-                  json: dict=None, data: dict=None) -> Response:
+                  json: dict=None, data: dict=None, files: dict=None) -> Response:
         endpoint = self._validate_endpoint(endpoint)
         url = f'{self.base_url}{endpoint}'
 
         while True:
             r = self.session.post(url, params=params, headers=headers, json=json,
-                                  data=data, verify=self.ssl_verify)
+                                  data=data, files=files, verify=self.ssl_verify)
 
             if not self._api_rate_limited(r.status_code) and self._authorized(r.status_code):
                 return r

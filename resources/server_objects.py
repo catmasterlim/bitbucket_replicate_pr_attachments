@@ -34,9 +34,11 @@ class PullRequest:
     repo: Repository
 
     def __post_init__(self):
-        self.created_date = self.datetime_from_int(self.created_date)
-        self.updated_date = self.datetime_from_int(self.updated_date)
+        #self.created_date = self.datetime_from_int(self.created_date)
+        #self.updated_date = self.datetime_from_int(self.updated_date)
+        ...
 
     @staticmethod
     def datetime_from_int(raw_time: int) -> datetime:
-        return datetime.fromtimestamp(raw_time)
+        #return datetime.fromtimestamp(raw_time)
+        ...

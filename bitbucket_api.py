@@ -39,16 +39,23 @@ def remove_attachment_local_copy(attachment: Path):
 
 def main():
     cloud, server = init()
-    for project in server.get_projects():
-        for repo in server.get_repos(project):
-            if not cloud.repo_exists(repo):
+    for server_project in server.get_projects():
+        for server_repo in server.get_repos(server_project):
+            if not cloud.repo_exists(cloud.workspace, server_repo):
+                log.info(f'Skipping repo "{server_repo.name}" as it is not present in your Cloud workspace')
                 continue
-            for pr in server.get_pull_requests(project, repo):
-                if not cloud.pr_exists(repo, pr):
+            log.info(f'Scanning PRs from repo "{server_repo.name}"')
+            for server_pr in server.get_pull_requests(server_project, server_repo):
+                if not cloud.pr_exists(cloud.workspace, server_repo, server_pr.id):
+                    log.info(f'Skipping pr "{server_pr.id}" from repo "{server_repo.name}" as is it not present in your Cloud workspace')
                     continue
-                for attachment_id, filename in server.get_pull_request_attachments(project, repo, pr):
-                    attachment = server.download_repo_attachment(project, repo, attachment_id, filename)
-                    cloud.upload_pr_attachment(attachment)
+                log.info(f'Scaning pr "{server_pr.id}" within repo "{server_repo.name}" for attachments')
+                for attachment_id, filename in server.get_pull_request_attachments(server_project, server_repo, server_pr):
+                    attachment = server.download_repo_attachment(server_project, server_repo, attachment_id, filename)
+                    if cloud.upload_attachment_to_downloads(cloud.workspace, server_repo, attachment, filename):
+                        cloud.add_pr_comment(server_repo, server_pr.id, attachment=attachment)
+                    else:
+                        log.warning(f'Unable to upload {attachment} to {server_repo.name} under the download section')
                     remove_attachment_local_copy(attachment)
 
     log.info('Done. Closing...')

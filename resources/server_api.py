@@ -131,16 +131,16 @@ class Server(ServerSessionHandler):
 
 class ServerUtils:
     @staticmethod
-    def strip_attachment_from_text(text: str) -> tuple(int, str):
+    def strip_attachment_from_text(text: str) -> Generator[tuple[int, str], None, None]:
         '''
         Example:
         in: "some text ![file.name](attachment:repo-id/attachment-id)"
         out: int(attachment-id), str(file.name)
         
-        regex pattern: !\[\w+.\w+\]\(attachment:\d+\/\d+\)
+        regex pattern: (\[(.*?)\]\(attachment:\d+\/\d+\))
         '''
-        matches: list[str] = findall(r'!\[\w+.\w+\]\(attachment:\d+\/\d+\)', text)
+        matches: list[list[str]] = findall(r'(\[(.*?)\]\(attachment:\d+\/\d+\))', text)
         for match in matches:
-            attachment_id = int(match.split('/')[-1].strip(')'))
-            filename = match.split(']')[0][2::]
-            yield attachment_id, filename
+            attachment_id = int(match[0].split('/')[-1].strip(')'))
+            filename = match[0].split(']')[0][1::]
+            yield (attachment_id, filename)
