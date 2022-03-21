@@ -155,36 +155,40 @@ class Cloud(CloudSessionHandler):
             return False
         return True
 
-    def add_pr_comment(self, workspace: Workspace, repo: Repository, pr_id: int, filename=str) -> bool:
+    def add_pr_comment(self, workspace: Workspace, repo: Repository, pr_id: int, attachment=Path) -> bool:
         '''
         returns True if successful, else False
         POST /2.0/repositories/{workspace}/{repo_slug}/pullrequests/{pull_request_id}/comments
 
         https://developer.atlassian.com/cloud/bitbucket/rest/api-group-pullrequests/#api-repositories-workspace-repo-slug-pullrequests-pull-request-id-comments-post
         '''
+        headers = {'Content-type': 'application/json'}
         endpoint = f'/2.0/repositories/{workspace.slug}/{repo.slug}/pullrequests/{pr_id}/comments'
-        file_url = f'https://bitbucket.org/{workspace.slug}/{repo.slug}/downloads/{filename}'
-        message = f'[{filename}]({file_url})'
+        file_url = f'https://bitbucket.org/{workspace.slug}/{repo.slug}/downloads/{attachment}'
+        message = f'[{attachment}]({file_url})'
         payload = {'content': {'raw': message}}
-        r = self._post_api(endpoint, data=payload)
+        r = self._post_api(endpoint, json=payload, headers=headers)
         r_json: dict = r.json()
-        if r_json.get('error'):
+        if r.status_code != 201 or r_json.get('error'):
+            log.debug(f'Failed to create comment on pr "{pr_id}" in repo "{repo.slug}" with message:\n{message}\nStatus_code: {r.status_code}\nText: {r.text}')
             return False
+        log.debug(f'Successfully added comment on pr "{pr_id}" in repo "repo.slug" for "{attachment}"')
         return True
 
-    def upload_attachment_to_downloads(self, workspace: Workspace, repo: Repository, path: Path, filename: str) -> bool:
+    def upload_attachment_to_downloads(self, workspace: Workspace, repo: Repository, attachment: Path) -> bool:
         '''
         POST /2.0/repositories/{workspace}/{repo_slug}/downloads
 
         https://developer.atlassian.com/cloud/bitbucket/rest/api-group-downloads/?utm_source=%2Fbitbucket%2Fapi%2F2%2Freference%2Fresource%2Frepositories%2F%257Bworkspace%257D%2F%257Brepo_slug%257D%2Fdownloads&utm_medium=302#post
         '''
         endpoint = f'/2.0/repositories/{workspace.slug}/{repo.slug}/downloads'
-        headers = {'Content-type': 'multipart/form-data', 'Accept': 'appliction/json'}
-        with open(filename, 'rb') as byte_file:
+        #headers = {'Content-type': 'multipart/form-data', 'Accept': 'appliction/json'}
+        headers = {}
+        with open(attachment, 'rb') as byte_file:
             files = {'files': byte_file}
             r = self._post_api(endpoint, headers=headers, files=files)
         if r.status_code == 201:
-            log.debug(f'Successfully uploaded "{filename}" to repo "{repo.name}"')
+            log.debug(f'Successfully uploaded "{attachment}" to repo "{repo.name}"')
             return True
-        log.debug(f'Failed to upload "{filename}" at path "{path}" for repo "{repo.name}" due to the following error:\n\t{r.status_code}\n\t{r.text}')
+        log.debug(f'Failed to upload "{attachment}" for repo "{repo.name}" due to the following error:\n\t{r.status_code}\n\t{r.text}')
         return False

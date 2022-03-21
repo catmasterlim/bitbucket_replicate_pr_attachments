@@ -52,8 +52,8 @@ def main():
                 log.info(f'Scaning pr "{server_pr.id}" within repo "{server_repo.name}" for attachments')
                 for attachment_id, filename in server.get_pull_request_attachments(server_project, server_repo, server_pr):
                     attachment = server.download_repo_attachment(server_project, server_repo, attachment_id, filename)
-                    if cloud.upload_attachment_to_downloads(cloud.workspace, server_repo, attachment, filename):
-                        cloud.add_pr_comment(server_repo, server_pr.id, attachment=attachment)
+                    if cloud.upload_attachment_to_downloads(cloud.workspace, server_repo, attachment):
+                        cloud.add_pr_comment(cloud.workspace, server_repo, server_pr.id, attachment)
                     else:
                         log.warning(f'Unable to upload {attachment} to {server_repo.name} under the download section')
                     remove_attachment_local_copy(attachment)

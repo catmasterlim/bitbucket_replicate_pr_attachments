@@ -5,6 +5,7 @@ from urllib3 import disable_warnings
 from urllib3.exceptions import InsecureRequestWarning
 from re import findall
 from pathlib import Path
+from uuid import uuid4
 
 from resources.api import Base_API
 from resources.server_objects import User, Project, Repository, PullRequest
@@ -34,13 +35,11 @@ class ServerSessionHandler(Base_API):
 
     def download(self, endpoint: str, filename: str) -> Path:
         log.debug(f'Attempting to save attachment "{filename}" to {Path.cwd()}')
-        if Path(filename).exists():
-            log.warn(f'File already exists with name "{filename}" in current working directory. Attempting to append "-temp" in order to proceed')
-            name, extension = filename.split('.')
-            fs_filename = f'{name}-temp.{extension}'
-        else:
-            fs_filename = filename
-
+        _name, _extension = filename.split('.')
+        _name_without_spaces = _name.replace(' ', '_')
+        _uuid = uuid4()
+        _name_with_hash = f'{_name_without_spaces}-{_uuid}'
+        fs_filename = f'{_name_with_hash}.{_extension}'
         url = f'{self.base_url}{endpoint}'
         with open(fs_filename, 'wb') as local_file:
             r = self.session.get(url)
