@@ -34,17 +34,21 @@ class ServerSessionHandler(Base_API):
             return False
 
     def download(self, endpoint: str, filename: str) -> Path:
-        log.debug(f'Attempting to save attachment "{filename}" to {Path.cwd()}')
         _name, _extension = filename.split('.')
         _name_without_spaces = _name.replace(' ', '_')
         _uuid = uuid4()
         _name_with_hash = f'{_name_without_spaces}-{_uuid}'
         fs_filename = f'{_name_with_hash}.{_extension}'
+        log.debug(f'Attempting to download attachment "{filename}" as "{fs_filename}" to prevent duplicate name collision.')
+
         url = f'{self.base_url}{endpoint}'
         with open(fs_filename, 'wb') as local_file:
             r = self.session.get(url)
+            if r.status_code != 200:
+                log.warning(f'Unable to download "{filename}" from "{url}" with\n\tStatus_code: {r.status_code}\n\t{r.text}')
+                return None
             local_file.write(r.content)
-
+        log.debug(f'Download of "{filename}" successful')
         return Path(fs_filename)
 
 
@@ -124,7 +128,7 @@ class Server(ServerSessionHandler):
         https://docs.atlassian.com/bitbucket-server/rest/7.21.0/bitbucket-rest.html#idp206
         '''
         endpoint = f'/rest/api/latest/projects/{project.key}/repos/{repo.slug}/attachments/{attachment_id}'
-        log.info(f'Attempting to download "{filename}" from server at URI "{endpoint}"')
+        log.debug(f'Attempting to download "{filename}" from server at URI "{endpoint}"')
         attachment = self.download(endpoint, filename)
         return attachment
 
