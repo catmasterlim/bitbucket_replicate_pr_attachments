@@ -33,10 +33,10 @@ class ServerSessionHandler(Base_API):
             disable_warnings(InsecureRequestWarning)
             return False
 
-    def download(self, endpoint: str, filename: str) -> Path:
+    def download(self, endpoint: str, filename: str, pr_id: int) -> Path:
         _name, _extension = filename.split('.')
         _name_without_spaces = _name.replace(' ', '_')
-        _uuid = uuid4()
+        _uuid = f'_PR-{pr_id}_{str(uuid4())[:8]}'
         _name_with_hash = f'{_name_without_spaces}-{_uuid}'
         fs_filename = f'{_name_with_hash}.{_extension}'
         log.debug(f'Attempting to download attachment "{filename}" as "{fs_filename}" to prevent duplicate name collision.')
@@ -123,13 +123,13 @@ class Server(ServerSessionHandler):
                         for attachment_id, filename in ServerUtils.strip_attachment_from_text(text):
                             yield attachment_id, filename
 
-    def download_repo_attachment(self, project: Project, repo: Repository, attachment_id: int, filename: str) -> Path:
+    def download_repo_attachment(self, project: Project, repo: Repository, attachment_id: int, filename: str, pr_id: int) -> Path:
         '''
         https://docs.atlassian.com/bitbucket-server/rest/7.21.0/bitbucket-rest.html#idp206
         '''
         endpoint = f'/rest/api/latest/projects/{project.key}/repos/{repo.slug}/attachments/{attachment_id}'
         log.debug(f'Attempting to download "{filename}" from server at URI "{endpoint}"')
-        attachment = self.download(endpoint, filename)
+        attachment = self.download(endpoint, filename, pr_id)
         return attachment
 
 class ServerUtils:
