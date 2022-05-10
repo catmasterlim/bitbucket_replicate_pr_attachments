@@ -8,7 +8,9 @@ server_username = ''
 server_password = ''
 # The base URL for your server instance without a trailing slash. Examples: http://localhost:7990 or https://mydomain.com
 server_url = ''
-
+# server project name and repo slug
+server_project_name = ''
+server_repo_slug = 'vsm-js'
 
 # Your cloud username
 cloud_username = ''
