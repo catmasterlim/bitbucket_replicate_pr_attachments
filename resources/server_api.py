@@ -6,6 +6,7 @@ from urllib3.exceptions import InsecureRequestWarning
 from re import findall
 from pathlib import Path
 from uuid import uuid4
+from urllib import parse
 
 from resources.api import Base_API
 from resources.server_objects import User, Project, Repository, PullRequest
@@ -82,6 +83,20 @@ class Server(ServerSessionHandler):
                               value.get('public'))
             yield project
 
+    def get_projects_by_name(self, project_name ) -> Generator[Project, None, None]:
+        '''
+        GET /rest/api/latest/projects
+        https://docs.atlassian.com/bitbucket-server/rest/7.19.1/bitbucket-rest.html#idp149
+        '''
+        endpoint =  "/rest/api/latest/projects?name="+parse.quote(project_name)
+        for value in self._get_paged_api(endpoint):
+            project = Project(value.get('key'),
+                              value.get('name'),
+                              value.get('id'),
+                              value.get('description'),
+                              value.get('public'))
+            yield project
+
     def get_repos(self, project: Project) -> Generator[Repository, None, None]:
         '''
         https://docs.atlassian.com/bitbucket-server/rest/7.21.0/bitbucket-rest.html#idp177
@@ -99,7 +114,9 @@ class Server(ServerSessionHandler):
         '''
         https://docs.atlassian.com/bitbucket-server/rest/7.21.0/bitbucket-rest.html#idp300
         '''
-        endpoint = f'/rest/api/latest/projects/{project.key}/repos/{repo.slug}/pull-requests'
+        endpoint = f'/rest/api/latest/projects/{project.key}/repos/{repo.slug}/pull-requests?state=ALL'
+        print(endpoint)
+
         for value in self._get_paged_api(endpoint):
             pr = PullRequest(value.get('id'),
                              value.get('title'),

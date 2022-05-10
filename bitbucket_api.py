@@ -17,6 +17,8 @@ def init() -> tuple[Cloud, Server]:
         server_username = env.server_username
         server_password = env.server_password
         server_url = env.server_url
+        server_project_name_select = env.server_project_name
+        server_repo_name_select = env.server_repo_name
 
 
     except [ImportError, NameError]:
@@ -32,20 +34,25 @@ def init() -> tuple[Cloud, Server]:
 
     cloud = Cloud(cloud_session, cloud_workspace)
     server = Server(server_session, server_url)
-    return cloud, server
+    return cloud, server, server_project_name_select, server_repo_name_select
 
 def remove_attachment_local_copy(attachment: Path):
     Path.unlink(attachment)
 
 def main():
-    cloud, server = init()
-    for server_project in server.get_projects():
+    cloud, server, server_project_name_select, server_repo_name_select = init()
+    for server_project in server.get_projects_by_name(server_project_name_select):
         for server_repo in server.get_repos(server_project):
             if not cloud.repo_exists(cloud.workspace, server_repo):
                 log.info(f'Skipping repo "{server_repo.name}" as it is not present in your Cloud workspace')
                 continue
+#            if server_repo_select != server_repo:
+#                log.info(f'Skipping repo "{server_repo.name}" as it is not select repo')
+#                continue
             log.info(f'Scanning PRs from repo "{server_repo.name}"')
+
             for server_pr in server.get_pull_requests(server_project, server_repo):
+
                 if not cloud.pr_exists(cloud.workspace, server_repo, server_pr.id):
                     log.info(f'Skipping pr "{server_pr.id}" from repo "{server_repo.name}" as is it not present in your Cloud workspace')
                     continue
